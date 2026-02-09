@@ -56,39 +56,80 @@ bot.on('message', (msg) => {
       `💰 <b>Итого:</b> ${order.total.toLocaleString()} ₽\n` +
       (order.comment ? `💬 <b>Комментарий:</b> ${order.comment}\n` : '');
 
-    // Формируем кнопку для связи с покупателем
-    let contactButton = null;
+    // Формируем кнопки для админа
+    const buttons = [];
+    
+    // Кнопка "Принять заказ" с callback_data, содержащим userId
+    if (order.userId) {
+      buttons.push([{
+        text: '✅ Принять заказ',
+        callback_data: `accept_order_${order.userId}_${msg.chat.id}`
+      }]);
+    }
+    
+    // Кнопка для связи с покупателем
     if (order.username) {
-      // Если есть username, используем его
-      contactButton = {
+      buttons.push([{
         text: '💬 Написать покупателю',
         url: `https://t.me/${order.username}`
-      };
+      }]);
     } else if (order.userId) {
-      // Если нет username, используем tg://user для открытия чата
-      contactButton = {
+      buttons.push([{
         text: '💬 Написать покупателю',
         url: `tg://user?id=${order.userId}`
-      };
+      }]);
     }
 
-    // Отправляем сообщение админу с кнопкой для связи
+    // Отправляем сообщение админу с кнопками
     const messageOptions = {
-      parse_mode: 'HTML'
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: buttons
+      }
     };
 
-    if (contactButton) {
-      messageOptions.reply_markup = {
-        inline_keyboard: [[contactButton]]
-      };
-    }
-
     bot.sendMessage(ADMIN_ID, orderMessage, messageOptions);
+  }
+});
 
-    // Подтверждение пользователю
-    bot.sendMessage(
-      msg.chat.id,
-      '✅ Заказ принят! Мы свяжемся с вами для уточнения деталей доставки.'
-    );
+// Обработка callback от кнопки "Принять заказ"
+bot.on('callback_query', (query) => {
+  const data = query.data;
+  
+  if (data.startsWith('accept_order_')) {
+    // Парсим данные: accept_order_userId_chatId
+    const parts = data.split('_');
+    if (parts.length >= 4) {
+      const userId = parts[2];
+      const chatId = parts[3];
+      
+      // Отправляем подтверждение пользователю
+      bot.sendMessage(
+        parseInt(chatId),
+        '✅ <b>Ваш заказ принят!</b>\n\nМы свяжемся с вами для уточнения деталей доставки.',
+        { parse_mode: 'HTML' }
+      );
+      
+      // Обновляем сообщение админа - убираем кнопку "Принять заказ"
+      bot.answerCallbackQuery(query.id, {
+        text: 'Заказ принят! Пользователю отправлено подтверждение.',
+        show_alert: false
+      });
+      
+      // Редактируем сообщение админа, убирая кнопку "Принять заказ"
+      const originalText = query.message.text;
+      const updatedText = originalText + '\n\n✅ <b>Заказ принят админом</b>';
+      
+      bot.editMessageText(updatedText, {
+        chat_id: query.message.chat.id,
+        message_id: query.message.message_id,
+        parse_mode: 'HTML',
+        reply_markup: {
+          inline_keyboard: query.message.reply_markup.inline_keyboard.filter(
+            row => !row.some(btn => btn.callback_data && btn.callback_data.startsWith('accept_order_'))
+          )
+        }
+      });
+    }
   }
 });
