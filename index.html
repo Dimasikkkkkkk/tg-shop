@@ -636,7 +636,11 @@
       const deliveryType = document.getElementById('deliveryType').value;
       const address = document.getElementById('address').value;
       const comment = document.getElementById('comment').value;
-      const user = tg.initDataUnsafe?.user;
+      // Получаем данные пользователя из Telegram WebApp
+      const user = tg.initDataUnsafe?.user || {};
+      
+      // Логируем для отладки
+      console.log('User data from Telegram:', user);
 
       const order = {
         items: cart.map(item => ({

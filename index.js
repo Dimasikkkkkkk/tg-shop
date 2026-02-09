@@ -29,17 +29,24 @@ bot.on('message', (msg) => {
 
     const itemsList = order.items.map((item, i) => `${i + 1}. ${item.name} - ${item.price.toLocaleString()} ₽`).join('\n');
 
-    // Формируем информацию о покупателе - всегда показываем имя, если есть
+    // Используем данные из msg.from (всегда доступны) или из заказа
+    const userFrom = msg.from || {};
+    const userId = String(userFrom.id || order.userId || '');
+    const username = userFrom.username || order.username || null;
+    const firstName = userFrom.first_name || order.firstName || null;
+    const lastName = userFrom.last_name || order.lastName || null;
+
+    // Формируем информацию о покупателе - приоритет: username > имя > ID
     let userInfo = '';
-    if (order.username) {
-      userInfo = `@${order.username}`;
-    } else if (order.firstName) {
-      userInfo = `${order.firstName}${order.lastName ? ' ' + order.lastName : ''}`;
+    if (username) {
+      userInfo = `@${username}`;
+    } else if (firstName) {
+      userInfo = `${firstName}${lastName ? ' ' + lastName : ''}`;
+    } else if (userId) {
+      userInfo = `Пользователь (ID: ${userId})`;
     } else {
       userInfo = 'Пользователь';
     }
-
-    const userId = order.userId ? String(order.userId) : null;
 
     // Формируем информацию о доставке
     const deliveryInfo = order.deliveryType === 'pickup' 
@@ -47,7 +54,7 @@ bot.on('message', (msg) => {
       : `📍 <b>Адрес доставки:</b>\n${order.address}`;
 
     const orderMessage = `🛒 <b>Новый заказ</b>\n\n` +
-      `👤 <b>Покупатель:</b> ${userInfo}${userId ? ` (ID: ${userId})` : ''}\n` +
+      `👤 <b>Покупатель:</b> ${userInfo}\n` +
       `${deliveryInfo}\n\n` +
       `🛍️ <b>Товары:</b>\n${itemsList}\n\n` +
       `💰 <b>Итого:</b> ${order.total.toLocaleString()} ₽\n` +
@@ -64,10 +71,11 @@ bot.on('message', (msg) => {
       }]);
     }
 
-    if (order.username) {
+    // Кнопка для связи с покупателем
+    if (username) {
       buttons.push([{
         text: '💬 Написать покупателю',
-        url: `https://t.me/${order.username}`
+        url: `https://t.me/${username}`
       }]);
     } else if (userId) {
       buttons.push([{
