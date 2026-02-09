@@ -47,9 +47,11 @@ bot.on('message', (msg) => {
     const buttons = [];
 
     if (userId) {
+      // Используем msg.from.id или msg.chat.id для сохранения chatId
+      const chatId = msg.from?.id || msg.chat.id;
       buttons.push([{
         text: '✅ Принять заказ',
-        callback_data: `accept_order_${userId}_${msg.chat.id}`
+        callback_data: `accept_order_${userId}_${chatId}`
       }]);
     }
 
@@ -68,6 +70,8 @@ bot.on('message', (msg) => {
     bot.sendMessage(ADMIN_ID, orderMessage, {
       parse_mode: 'HTML',
       reply_markup: { inline_keyboard: buttons }
+    }).catch((err) => {
+      console.error('Ошибка при отправке сообщения админу:', err.message);
     });
   }
 });
@@ -80,13 +84,29 @@ bot.on('callback_query', (query) => {
     const parts = data.split('_');
     if (parts.length >= 4) {
       const userId = parts[2];
-      const chatId = parts[3];
+      const chatId = parseInt(parts[3]);
 
+      // Отправляем подтверждение пользователю
+      // Пробуем отправить по chatId, если не получается - по userId
       bot.sendMessage(
-        parseInt(chatId),
+        chatId,
         '✅ <b>Ваш заказ принят!</b>\n\nМы свяжемся с вами для уточнения деталей доставки.',
         { parse_mode: 'HTML' }
-      );
+      ).catch((err) => {
+        console.error('Ошибка при отправке по chatId:', err.message);
+        // Если не удалось отправить по chatId, пробуем отправить по userId
+        if (userId && (err.message.includes('chat not found') || err.message.includes('ETELEGRAM'))) {
+          bot.sendMessage(
+            parseInt(userId),
+            '✅ <b>Ваш заказ принят!</b>\n\nМы свяжемся с вами для уточнения деталей доставки.',
+            { parse_mode: 'HTML' }
+          ).catch((err2) => {
+            console.error('Ошибка при отправке по userId:', err2.message);
+            // Если и это не сработало, отправляем админу уведомление
+            bot.sendMessage(ADMIN_ID, `⚠️ Не удалось отправить подтверждение пользователю (ID: ${userId}). Возможно, пользователь не начал диалог с ботом.`);
+          });
+        }
+      });
 
       bot.answerCallbackQuery(query.id, {
         text: 'Заказ принят! Пользователю отправлено подтверждение.',
@@ -104,6 +124,8 @@ bot.on('callback_query', (query) => {
             row => !row.some(btn => btn.callback_data && btn.callback_data.startsWith('accept_order_'))
           )
         }
+      }).catch((err) => {
+        console.error('Ошибка при редактировании сообщения:', err.message);
       });
     }
   }
