@@ -33,28 +33,57 @@ bot.on('message', (msg) => {
       `${index + 1}. ${item.name} - ${item.price.toLocaleString()} ₽`
     ).join('\n');
 
+    // Формируем информацию о покупателе
+    const userName = order.username 
+      ? `@${order.username}` 
+      : order.firstName 
+        ? `${order.firstName}${order.lastName ? ' ' + order.lastName : ''}`
+        : 'Неизвестно';
+    
+    const userInfo = order.username 
+      ? `@${order.username}` 
+      : order.firstName 
+        ? `${order.firstName}${order.lastName ? ' ' + order.lastName : ''}`
+        : 'Неизвестно';
+    
+    const userId = order.userId || 'неизвестно';
+
     // Формируем сообщение для админа
     const orderMessage = `🛒 <b>Новый заказ</b>\n\n` +
-      `👤 <b>Покупатель:</b> @${order.username} (ID: ${order.userId})\n` +
+      `👤 <b>Покупатель:</b> ${userInfo} (ID: ${userId})\n` +
       `📍 <b>Адрес доставки:</b>\n${order.address}\n\n` +
       `🛍️ <b>Товары:</b>\n${itemsList}\n\n` +
       `💰 <b>Итого:</b> ${order.total.toLocaleString()} ₽\n` +
       (order.comment ? `💬 <b>Комментарий:</b> ${order.comment}\n` : '');
 
+    // Формируем кнопку для связи с покупателем
+    let contactButton = null;
+    if (order.username) {
+      // Если есть username, используем его
+      contactButton = {
+        text: '💬 Написать покупателю',
+        url: `https://t.me/${order.username}`
+      };
+    } else if (order.userId) {
+      // Если нет username, используем tg://user для открытия чата
+      contactButton = {
+        text: '💬 Написать покупателю',
+        url: `tg://user?id=${order.userId}`
+      };
+    }
+
     // Отправляем сообщение админу с кнопкой для связи
-    bot.sendMessage(ADMIN_ID, orderMessage, {
-      parse_mode: 'HTML',
-      reply_markup: {
-        inline_keyboard: [
-          [
-            {
-              text: '💬 Написать покупателю',
-              url: `https://t.me/${order.username}`
-            }
-          ]
-        ]
-      }
-    });
+    const messageOptions = {
+      parse_mode: 'HTML'
+    };
+
+    if (contactButton) {
+      messageOptions.reply_markup = {
+        inline_keyboard: [[contactButton]]
+      };
+    }
+
+    bot.sendMessage(ADMIN_ID, orderMessage, messageOptions);
 
     // Подтверждение пользователю
     bot.sendMessage(

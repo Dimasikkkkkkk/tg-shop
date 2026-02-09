@@ -405,6 +405,16 @@
     tg.ready();
     tg.expand();
 
+    // Функция для получения URL изображения
+    function getImageUrl(path) {
+      // Используем raw.githubusercontent.com для доступа к изображениям
+      const baseUrl = 'https://raw.githubusercontent.com/Dimasikkkkkkk/tg-shop/main/';
+      // Правильно кодируем путь, сохраняя слеши
+      const parts = path.split('/');
+      const encodedParts = parts.map(part => encodeURIComponent(part));
+      return baseUrl + encodedParts.join('/');
+    }
+
     // Данные товаров
     const products = [
       // Процессоры
@@ -491,7 +501,7 @@
       
       grid.innerHTML = filtered.map(product => `
         <div class="product-card" onclick="addToCart(${product.id})">
-          <img src="${product.image}" alt="${product.name}" class="product-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23161b22%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%238b949e%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3EНет изображения%3C/text%3E%3C/svg%3E'">
+          <img src="${getImageUrl(product.image)}" alt="${product.name}" class="product-image" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22%3E%3Crect fill=%22%23161b22%22 width=%22200%22 height=%22200%22/%3E%3Ctext fill=%22%238b949e%22 font-family=%22sans-serif%22 font-size=%2214%22 dy=%2210.5%22 x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22%3EНет изображения%3C/text%3E%3C/svg%3E'">
           <div class="product-name">${product.name}</div>
           <div class="product-price">${product.price.toLocaleString()} ₽</div>
         </div>
@@ -615,8 +625,10 @@
         total: cart.reduce((sum, item) => sum + item.price, 0),
         address: address,
         comment: comment || '',
-        userId: user?.id || 'неизвестно',
-        username: user?.username || user?.first_name || 'неизвестно'
+        userId: user?.id || null,
+        username: user?.username || null,
+        firstName: user?.first_name || null,
+        lastName: user?.last_name || null
       };
 
       tg.sendData(JSON.stringify(order));
