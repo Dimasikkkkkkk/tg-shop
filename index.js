@@ -13,7 +13,7 @@ bot.onText(/\/start/, (msg) => {
           {
             text: '🛒 Магазин',
             web_app: {
-              url: 'https://dimasikkkkkkk.github.io/tg-shop/' // твоя ссылка
+              url: `https://dimasikkkkkkk.github.io/tg-shop/?v=${Date.now()}` // твоя ссылка с версией для обхода кеша
             }
           }
         ]
