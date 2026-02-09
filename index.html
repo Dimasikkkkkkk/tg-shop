@@ -511,7 +511,7 @@
     // Добавление в корзину
     function addToCart(productId) {
       const product = products.find(p => p.id === productId);
-      cart.push({ ...product, cartId: Date.now() });
+      cart.push({ ...product, cartId: crypto.randomUUID() });
       updateCartUI();
       tg.HapticFeedback.impactOccurred('light');
     }
@@ -559,7 +559,7 @@
             <div class="cart-item-name">${item.name}</div>
             <div class="cart-item-price">${item.price.toLocaleString()} ₽</div>
           </div>
-          <button class="remove-btn" onclick="removeFromCart(${item.cartId})">Удалить</button>
+          <button class="remove-btn" onclick="removeFromCart('${item.cartId}')">Удалить</button>
         </div>
       `).join('');
     }
