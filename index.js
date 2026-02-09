@@ -27,10 +27,39 @@ bot.onText(/\/start/, (msg) => {
 bot.on('message', (msg) => {
   if (msg.web_app_data) {
     const order = JSON.parse(msg.web_app_data.data);
+    
+    // Формируем список товаров
+    const itemsList = order.items.map((item, index) => 
+      `${index + 1}. ${item.name} - ${item.price.toLocaleString()} ₽`
+    ).join('\n');
 
+    // Формируем сообщение для админа
+    const orderMessage = `🛒 <b>Новый заказ</b>\n\n` +
+      `👤 <b>Покупатель:</b> @${order.username} (ID: ${order.userId})\n` +
+      `📍 <b>Адрес доставки:</b>\n${order.address}\n\n` +
+      `🛍️ <b>Товары:</b>\n${itemsList}\n\n` +
+      `💰 <b>Итого:</b> ${order.total.toLocaleString()} ₽\n` +
+      (order.comment ? `💬 <b>Комментарий:</b> ${order.comment}\n` : '');
+
+    // Отправляем сообщение админу с кнопкой для связи
+    bot.sendMessage(ADMIN_ID, orderMessage, {
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [
+          [
+            {
+              text: '💬 Написать покупателю',
+              url: `https://t.me/${order.username}`
+            }
+          ]
+        ]
+      }
+    });
+
+    // Подтверждение пользователю
     bot.sendMessage(
-      ADMIN_ID,
-      `🛒 Новый заказ\nТовар: ${order.product}\nЦена: ${order.price}`
+      msg.chat.id,
+      '✅ Заказ принят! Мы свяжемся с вами для уточнения деталей доставки.'
     );
   }
 });
