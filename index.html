@@ -6,7 +6,22 @@
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 </head>
 <body>
-  <h3>Мой первый магазин</h3>
-  <p>Если ты это видишь — Web App работает</p>
+  <h3>Магазин</h3>
+  <p>Нажми кнопку, чтобы сделать заказ</p>
+  <button id="order">Сделать заказ</button>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+
+    document.getElementById('order').onclick = () => {
+      const order = {
+        product: 'Товар №1',
+        price: 100
+      };
+
+      tg.sendData(JSON.stringify(order));
+    };
+  </script>
 </body>
 </html>
