@@ -287,7 +287,7 @@
       font-weight: 500;
     }
 
-    input, textarea {
+    input, textarea, select {
       width: 100%;
       padding: 12px;
       background: #0d1117;
@@ -298,7 +298,7 @@
       font-family: inherit;
     }
 
-    input:focus, textarea:focus {
+    input:focus, textarea:focus, select:focus {
       outline: none;
       border-color: #dc2626;
     }
@@ -388,6 +388,13 @@
       </div>
       <form id="orderForm">
         <div class="form-group">
+          <label>Способ получения *</label>
+          <select id="deliveryType" required style="width: 100%; padding: 12px; background: #0d1117; border: 1px solid #30363d; border-radius: 8px; color: #e6edf3; font-size: 14px; font-family: inherit;">
+            <option value="delivery">Доставка</option>
+            <option value="pickup">Самовывоз</option>
+          </select>
+        </div>
+        <div class="form-group" id="addressGroup">
           <label>Адрес доставки *</label>
           <textarea id="address" required placeholder="Город, улица, дом, квартира"></textarea>
         </div>
@@ -601,6 +608,19 @@
         submitOrder();
       });
 
+      // Обработка изменения способа доставки
+      document.getElementById('deliveryType').addEventListener('change', (e) => {
+        const addressGroup = document.getElementById('addressGroup');
+        const addressField = document.getElementById('address');
+        if (e.target.value === 'pickup') {
+          addressGroup.style.display = 'none';
+          addressField.removeAttribute('required');
+        } else {
+          addressGroup.style.display = 'block';
+          addressField.setAttribute('required', 'required');
+        }
+      });
+
       // Закрытие модалок по клику вне
       document.querySelectorAll('.modal').forEach(modal => {
         modal.addEventListener('click', (e) => {
@@ -613,6 +633,7 @@
 
     // Отправка заказа
     function submitOrder() {
+      const deliveryType = document.getElementById('deliveryType').value;
       const address = document.getElementById('address').value;
       const comment = document.getElementById('comment').value;
       const user = tg.initDataUnsafe?.user;
@@ -623,7 +644,8 @@
           price: item.price
         })),
         total: cart.reduce((sum, item) => sum + item.price, 0),
-        address: address,
+        deliveryType: deliveryType,
+        address: deliveryType === 'delivery' ? address : 'Самовывоз',
         comment: comment || '',
         userId: user?.id || null,
         username: user?.username || null,

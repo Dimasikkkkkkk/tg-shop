@@ -29,17 +29,26 @@ bot.on('message', (msg) => {
 
     const itemsList = order.items.map((item, i) => `${i + 1}. ${item.name} - ${item.price.toLocaleString()} ₽`).join('\n');
 
-    const userInfo = order.username 
-      ? `@${order.username}` 
-      : order.firstName 
-        ? `${order.firstName}${order.lastName ? ' ' + order.lastName : ''}` 
-        : 'Неизвестно';
+    // Формируем информацию о покупателе - всегда показываем имя, если есть
+    let userInfo = '';
+    if (order.username) {
+      userInfo = `@${order.username}`;
+    } else if (order.firstName) {
+      userInfo = `${order.firstName}${order.lastName ? ' ' + order.lastName : ''}`;
+    } else {
+      userInfo = 'Пользователь';
+    }
 
     const userId = order.userId ? String(order.userId) : null;
 
+    // Формируем информацию о доставке
+    const deliveryInfo = order.deliveryType === 'pickup' 
+      ? '🚚 <b>Способ получения:</b> Самовывоз'
+      : `📍 <b>Адрес доставки:</b>\n${order.address}`;
+
     const orderMessage = `🛒 <b>Новый заказ</b>\n\n` +
       `👤 <b>Покупатель:</b> ${userInfo}${userId ? ` (ID: ${userId})` : ''}\n` +
-      `📍 <b>Адрес доставки:</b>\n${order.address}\n\n` +
+      `${deliveryInfo}\n\n` +
       `🛍️ <b>Товары:</b>\n${itemsList}\n\n` +
       `💰 <b>Итого:</b> ${order.total.toLocaleString()} ₽\n` +
       (order.comment ? `💬 <b>Комментарий:</b> ${order.comment}\n` : '');
